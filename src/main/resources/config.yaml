@@ -1,0 +1,19 @@
+http:
+  port: "8081"
+
+cars:
+  host: "car-partners-ws.us-e2.cloudhub.io"
+  port: "80"
+  basepath: "/"
+  protocol: "HTTP"
+
+indigo-flights:
+  host: "indigo-flights-ws.us-e2.cloudhub.io"
+  port: "80"
+  basepath: "/"
+  protocol: "HTTP"
+
+taj-hotels:
+  wsdl: "http://taj-group-hotel-booking-sapi.us-e2.cloudhub.io/TajGroupHotelBookingService/HotelServicePort?wsdl"
+  service: "TajGroupHotelBookingService"
+  port: "HotelServicePort"

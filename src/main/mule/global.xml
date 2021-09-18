@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns:indigo-flightss-api="http://www.mulesoft.org/schema/mule/indigo-flightss-api"
+	xmlns:car-partnerss-api="http://www.mulesoft.org/schema/mule/car-partnerss-api"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/car-partnerss-api http://www.mulesoft.org/schema/mule/car-partnerss-api/current/mule-car-partnerss-api.xsd
+http://www.mulesoft.org/schema/mule/indigo-flightss-api http://www.mulesoft.org/schema/mule/indigo-flightss-api/current/mule-indigo-flightss-api.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd">
+	<http:listener-config name="book-my-holiday-papi-httpListenerConfig" doc:name="HTTP Listener config" doc:id="83edc402-afda-45d5-94ce-4339ca8f671f" >
+		<http:listener-connection host="0.0.0.0" port="${http.port}" />
+	</http:listener-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="7d1c3e33-36de-4aa9-901e-7f67ea9958f9" file="config.yaml" />
+	<car-partnerss-api:config name="Car_Partners_sAPI_Config" doc:name="Car Partners sAPI Config" doc:id="b512f982-76a5-4ced-9851-751ee508b42c" property_host="${cars.host}" property_port="${cars.port}" property_protocol="${cars.protocol}" property_basePath="${cars.basepath}"/>
+	<indigo-flightss-api:config name="Indigo_Flights_sAPI_Config" doc:name="Indigo Flights sAPI Config" doc:id="27fa0e2c-c3e5-4648-9dd2-ee418686520c" property_host="${indigo-flights.host}" property_port="${indigo-flights.port}" property_protocol="${indigo-flights.protocol}" property_basePath="${indigo-flights.basepath}"/>
+	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="10de69ab-8e8e-441b-a226-363f8cbbbd45" >
+		<wsc:connection wsdlLocation="${taj-hotels.wsdl}" service="${taj-hotels.service}" port="${taj-hotels.port}" />
+	</wsc:config>
+</mule>

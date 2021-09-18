@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="MULE_LIB/org.mule.connectors/mule-wsc-connector/1.6.6"/>
+	<classpathentry kind="con" path="MULE_LIB/697af2f9-4e10-406c-a7b1-d8ecfd14aca2/mule-plugin-indigo-flights-sapi/1.0.2"/>
+	<classpathentry kind="con" path="MULE_LIB/697af2f9-4e10-406c-a7b1-d8ecfd14aca2/mule-plugin-car-partners-sapi/1.0.2"/>
+	<classpathentry kind="con" path="MULE_LIB/org.mule.connectors/mule-http-connector/1.5.23"/>
+	<classpathentry kind="con" path="MULE_LIB/org.mule.connectors/mule-sockets-connector/1.1.5"/>
+	<classpathentry kind="con" path="org.mule.tooling.API_SPEC_LIB/697af2f9-4e10-406c-a7b1-d8ecfd14aca2/book-my-holiday-papi/1.0.0"/>
+	<classpathentry kind="con" path="MULE_LIB/org.mule.modules/mule-apikit-module/1.5.5"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry exported="true" kind="con" path="MULE_RUNTIME/org.mule.tooling.server.4.3.0.ee"/>
+	<classpathentry kind="src" path="src/main/mule"/>
+	<classpathentry kind="src" path="src/main/java"/>
+	<classpathentry kind="src" path="src/main/resources"/>
+	<classpathentry kind="src" output="target/test-classes" path="src/test/java"/>
+	<classpathentry kind="src" output="target/test-classes" path="src/test/resources"/>
+	<classpathentry kind="src" path="src/test/munit"/>
+	<classpathentry kind="output" path="target/classes"/>
+</classpath>
