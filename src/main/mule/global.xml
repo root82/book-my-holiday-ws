@@ -11,7 +11,7 @@ http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/
 		<http:listener-connection host="0.0.0.0" port="${http.port}" />
 	</http:listener-config>
 	<configuration-properties doc:name="Configuration properties" doc:id="7d1c3e33-36de-4aa9-901e-7f67ea9958f9" file="config.yaml" />
-	<car-partnerss-api:config name="Car_Partners_sAPI_Config" doc:name="Car Partners sAPI Config" doc:id="b512f982-76a5-4ced-9851-751ee508b42c" property_host="${cars.host}" property_port="${cars.port}" property_protocol="${cars.protocol}" property_basePath="${cars.basepath}"/>
+	<car-partnerss-api:config name="Car_Partners_sAPI_Config" doc:name="Car Partners sAPI Config" doc:id="b512f982-76a5-4ced-9851-751ee508b42c" property_protocol="${cars.protocol}" property_basePath="${cars.basepath}" property_host="${cars.host}" property_port="${cars.port}"/>
 	<indigo-flightss-api:config name="Indigo_Flights_sAPI_Config" doc:name="Indigo Flights sAPI Config" doc:id="27fa0e2c-c3e5-4648-9dd2-ee418686520c" property_host="${indigo-flights.host}" property_port="${indigo-flights.port}" property_protocol="${indigo-flights.protocol}" property_basePath="${indigo-flights.basepath}"/>
 	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="10de69ab-8e8e-441b-a226-363f8cbbbd45" >
 		<wsc:connection wsdlLocation="${taj-hotels.wsdl}" service="${taj-hotels.service}" port="${taj-hotels.port}" />

@@ -4,7 +4,7 @@ http:
 cars:
   host: "car-partners-ws.us-e2.cloudhub.io"
   port: "80"
-  basepath: "/"
+  basepath: "/api/"
   protocol: "HTTP"
 
 indigo-flights:

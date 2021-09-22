@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
+	<classpathentry kind="con" path="MULE_LIB/org.mule.modules/mule-validation-module/1.4.5"/>
 	<classpathentry kind="con" path="MULE_LIB/org.mule.connectors/mule-wsc-connector/1.6.6"/>
 	<classpathentry kind="con" path="MULE_LIB/697af2f9-4e10-406c-a7b1-d8ecfd14aca2/mule-plugin-indigo-flights-sapi/1.0.2"/>
 	<classpathentry kind="con" path="MULE_LIB/697af2f9-4e10-406c-a7b1-d8ecfd14aca2/mule-plugin-car-partners-sapi/1.0.2"/>

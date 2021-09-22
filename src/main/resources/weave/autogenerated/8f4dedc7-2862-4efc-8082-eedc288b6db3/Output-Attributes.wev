@@ -1,0 +1,23 @@
+%dw 2.0
+
+type auto_8f4dedc7_2862_4efc_8082_eedc288b6db3_Output_Attributes = {|
+  clientCertificate?: {|
+    publicKey?: {|  |}, 
+    "type"?: String, 
+    encoded?: Binary
+  |}, 
+  headers: {|  |}, 
+  listenerPath: String, 
+  method: String, 
+  queryParams: {|  |}, 
+  queryString: String, 
+  relativePath: String, 
+  remoteAddress: String, 
+  requestPath: String, 
+  requestUri: String, 
+  scheme: String, 
+  uriParams: {| bookingId: String |}, 
+  version: String, 
+  localAddress: String
+|}
+
