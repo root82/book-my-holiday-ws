@@ -82,8 +82,7 @@
 			<artifactId>mule-validation-module</artifactId>
 			<version>1.4.5</version>
 			<classifier>mule-plugin</classifier>
-		</dependency>
-	</dependencies>
+		</dependency>	</dependencies>
 
 	<repositories>
 		<repository>

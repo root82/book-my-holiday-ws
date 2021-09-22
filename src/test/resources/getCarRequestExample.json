@@ -1,0 +1,26 @@
+[
+    {
+        "name": "OLA",
+        "location": "DELHI",
+        "id": 1,
+        "tariffPerHour": "600",
+        "email": "OLADELHI@help.com",
+        "contactNo": "897545141"
+    },
+    {
+        "name": "UBER",
+        "location": "DELHI",
+        "id": 2,
+        "tariffPerHour": "650",
+        "email": "UBERDELHI@help.com",
+        "contactNo": "785141233"
+    },
+    {
+        "name": "SUPER DELHI",
+        "location": "DELHI",
+        "id": 3,
+        "tariffPerHour": "500",
+        "email": "SUPERDELHI@help.com",
+        "contactNo": "897545141"
+    }
+]

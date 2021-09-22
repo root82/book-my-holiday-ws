@@ -1,0 +1,349 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:car-partnerss-api="http://www.mulesoft.org/schema/mule/car-partnerss-api"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/car-partnerss-api http://www.mulesoft.org/schema/mule/car-partnerss-api/current/mule-car-partnerss-api.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="a871e0ac-262d-4bd0-b1b4-94b8c26f4905" basePath="/api/bookings" >
+		<http:request-connection host="car-partners-ws.us-e2.cloudhub.io" port="80" />
+	</http:request-config>
+	<http:request-config name="HTTP_Request_configuration1" doc:name="HTTP Request configuration" doc:id="74010dc1-81e5-49e4-947d-140d06291511">
+		<http:request-connection host="car-partners-ws.us-e2.cloudhub.io" port="80" />
+		<http:default-query-params >
+			<http:query-param key="location" value="#[message.attributes.queryParams.location]" />
+		</http:default-query-params>
+	</http:request-config>
+	<http:request-config name="HTTP_Request_configuration2" doc:name="HTTP Request configuration" doc:id="f4a1baab-017e-4fe3-a6a6-4b0c6145afb0" >
+		<http:request-connection host="car-partners-ws.us-e2.cloudhub.io" port="80" />
+	</http:request-config>
+	<validation:config name="Validation_Config" doc:name="Validation Config" doc:id="d39e846b-b805-42dd-9a01-cd594ee4c758" />
+	<flow name="Valid_Booking_ID_ORNOT" doc:id="8f4dedc7-2862-4efc-8082-eedc288b6db3" >
+		<car-partnerss-api:get-bookinginfo doc:name="Get BookingInfo" doc:id="66afb7c0-eddd-4bbf-a49c-c70472242395" config-ref="Car_Partners_sAPI_Config" booking-id="#[vars.bookingId]"/>
+		<validation:is-true doc:name="Is true" doc:id="bd30e325-187f-4515-98ed-c829af52d79b" config-ref="Validation_Config" expression="#[payload.bookingId &gt;=1]" message='"Invalid Booking Id"'>
+			<error-mapping targetType="INVALID_BOOKINGID:INVALID_BOOKINGID" />
+		</validation:is-true>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="1e707d6d-6653-468a-a511-2ee4355bcb77" type="INVALID_BOOKINGID:INVALID_BOOKINGID">
+				<ee:transform doc:name="Transform Message" doc:id="900add56-435c-4a50-ad2e-b255f44b2b91">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Invalid Booking Id"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="400" doc:name="httpStatus" doc:id="6b008108-60c3-46d5-83b5-27cb7c608c99" variableName="httpStatus" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="cancelCarBookingByIdFlow" doc:id="0eac44bb-62bf-4357-8542-e7f76740a6dd" initialState="started">
+		<set-variable value="#[attributes.uriParams.bookingId]" doc:name="bookingId" doc:id="9af7057e-a961-4985-8064-6d3b3c5ad4fd" variableName="bookingId"/>
+		<flow-ref doc:name="bookingId_in_no_ornot_Flow" doc:id="24cd1e92-c735-4d3d-a0ee-96bd83907eb8" name="bookingId_in_no_ornot_Flow"/>
+		<flow-ref doc:name="Valid_Booking_ID_ORNOT" doc:id="cea8b1e1-ddaf-400c-b1f2-f89f3e040178" name="Valid_Booking_ID_ORNOT" />
+		<car-partnerss-api:cancel-a-booking doc:name="Cancel a Booking" doc:id="0ae86667-5e9c-487d-8e4d-06736ceec961" config-ref="Car_Partners_sAPI_Config" booking-id="#[vars.bookingId]"/>
+		<ee:transform doc:name="Transform Message" doc:id="15dcd1aa-b5cc-4831-b5ec-9fc85683f860" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: payload
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getCarBookingDetailsByIdFlow" doc:id="c8a6cbcc-7d49-4ee8-873e-e392fdb365d2">
+		<set-variable value="#[attributes.uriParams.bookingId]" doc:name="bookingId" doc:id="ebc2113a-5996-47f1-9d70-6610484a6f0e" variableName="bookingId" />
+		<flow-ref doc:name="bookingId_in_no_ornot_Flow" doc:id="ef320722-d906-498d-badd-5b652b2cce4e" name="bookingId_in_no_ornot_Flow" />
+		<car-partnerss-api:get-bookinginfo doc:name="Get BookingInfo" doc:id="d8a09bc7-f08e-4f5c-9373-ba98f75761db" config-ref="Car_Partners_sAPI_Config" booking-id='#[vars.bookingId default ""]' />
+		<validation:is-true doc:name="Is true" doc:id="ddd5a6ac-af97-416b-b1eb-30f3abef9f11" config-ref="Validation_Config" expression="#[(payload.bookingId as Number) &gt; 0]" message='"INVALID BOOKING ID"'>
+			<error-mapping targetType="NO_REC:NO_REC" />
+		</validation:is-true>
+		<ee:transform doc:name="Transform Message" doc:id="88b29155-9bdc-485e-9c6d-c61aeb0601ca">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	customerEmailId: payload.customerEmailId,
+	totalHours: payload.totalHours,
+	price: payload.price,
+	bookingDate: payload.bookingDate,
+	customerContactNo: payload.customerContactNo,
+	bookingId: payload.bookingId,
+	customerName: payload.customerName,
+	carId: payload.partnerId
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="39d9565f-e16f-4a78-b6bd-4513cfa876d4" type="NO_REC:NO_REC">
+				<ee:transform doc:name="Transform Message" doc:id="e428e52d-e865-4609-bc67-17333de0d973" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "NO_REC_EXIST_FOR_GIVEN_BOOKINGID"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="400" doc:name="httpStatus" doc:id="42dae305-c642-46c5-9ac3-8981fdfebc38" variableName="httpStatus"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="bookingId_in_no_ornot_Flow" doc:id="10448322-0a65-42b2-b6e1-d3d9f452dcc4" >
+		<validation:is-number numberType="INTEGER" doc:name="Is number" doc:id="fc2c85ee-d0bb-424c-b790-820fd0aae0b9" config-ref="Validation_Config" value="#[vars.bookingId]" message='"INVALID BOOKINGID"'>
+			<error-mapping sourceType="VALIDATION:INVALID_NUMBER" targetType="INVALID_BOOKINGID:INVALID_BOOKINGID" />
+		</validation:is-number>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="3d52abbc-a625-42b5-9f8e-516dbdd797dc" type="INVALID_BOOKINGID:INVALID_BOOKINGID">
+				<ee:transform doc:name="Transform Message" doc:id="fac15a38-8b9f-48d2-884b-e835339fbf74">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	error: error.description ,
+	message: "Invalid BookingId"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="400" doc:name="httpStatus" doc:id="02a0e9fc-4d8e-4734-97ad-39c9140c06df" variableName="httpStatus" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="getCarsFlow" doc:id="899ca6f8-8b4d-4683-98e6-784c647b979f">
+		<http:request method="GET" doc:name="Request" doc:id="1fb3c940-1a37-4052-8aab-cfbd19f0c946" config-ref="HTTP_Request_configuration2" path="/api/cars">
+			<http:query-params><![CDATA[#[output application/java
+---
+{
+	"location" : message.attributes.queryParams.location default "",
+	"partnerId": message.attributes.queryParams.partnerId	
+	
+}]]]></http:query-params>
+		</http:request>
+		<validation:is-true doc:name="Is true" doc:id="450d06cc-1afa-4dec-b536-b5150a58bdee" expression="#[sizeOf(payload)&gt;0]" message='"BLANK_RES"'>
+			<error-mapping targetType="BLANK_RES:BLANK_RES" />
+		</validation:is-true>
+		<ee:transform doc:name="Transform Message" doc:id="fa088e7e-990d-4ebe-9ecb-b375882a2655">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	id: payload01.id,
+	name: payload01.name,
+	contactNo: payload01.contactNo,
+	email: payload01.email,
+	location: payload01.location,
+	tariffPerHour: payload01.tariffPerHour
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="598c83ac-936b-4d4f-9e85-aee7af53a63f" type="BLANK_RES:BLANK_RES">
+				<ee:transform doc:name="Transform Message" doc:id="8fc602fa-7c22-4ed8-89ba-2e94a97df081" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Currently no available partner on this route"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="204" doc:name="httpstatus" doc:id="1fc6d734-ec7d-4712-bf2a-d7fe3298e011" variableName="httpstatus"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="postCarBookingFlow" doc:id="d239beb4-3d4f-4ce2-bdfe-97466ae0b63a" >
+		<ee:transform doc:name="Transform Message" doc:id="dd7f356f-f95a-444b-b1be-e3e58668f9b8" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	partnerId: payload.carId,
+	customerName: payload.customerName,
+	customerContactNo: payload.customerContactNo,
+	customerEmailId: payload.customerEmailId,
+	bookingDate: payload.bookingDate ,
+	totalHours: payload.totalHours,
+
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="interres" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	partnerId: payload.carId,
+	customerName: payload.customerName,
+	customerContactNo: payload.customerContactNo,
+	customerEmailId: payload.customerEmailId,
+	bookingDate: payload.bookingDate ,
+	totalHours: payload.totalHours,
+
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<http:request method="GET" doc:name="Request" doc:id="102bb146-a23f-4530-af6e-1a29342e7f49" config-ref="HTTP_Request_configuration2" path="/api/cars">
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"partnerId" : vars.interres.partnerId
+}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="bbf2b41c-b84c-4187-8bc6-99adf04d710c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+((payload[0].tariffPerHour as Number) * (vars.interres.totalHours as Number)) as String]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="pricevar" ><![CDATA[%dw 2.0
+output application/json
+---
+((payload[0].tariffPerHour as Number) * (vars.interres.totalHours as Number)) as String]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="48e48d21-8547-4a4b-b9a8-4cd477f91442" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+---
+{
+	partnerId: vars.interres.partnerId ,
+	customerName: vars.interres.customerName,
+	customerContactNo: vars.interres.customerContactNo,
+	customerEmailId: vars.interres.customerEmailId,
+	bookingDate: vars.interres.bookingDate ,
+	totalHours: vars.interres.totalHours,
+    price: 
+    (
+    if 
+    ((vars.interres.totalHours as Number)  > 5) 
+    ((vars.pricevar as Number) - ((vars.pricevar as Number)*10/100 )) as Number
+    
+    else  if 
+    ((vars.interres.bookingDate replace "/" with("-") ) - |P5D| >  now()) 
+    ((vars.pricevar as Number)  - ((vars.pricevar as Number) *20)/100 as Number)   
+    else (payload[0].tariffPerHour as Number)
+    ) as String  
+    
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<car-partnerss-api:add-a-booking doc:name="Add a Booking" doc:id="660e5a49-d96d-434e-b01c-084943dd9e85" config-ref="Car_Partners_sAPI_Config">
+		</car-partnerss-api:add-a-booking>
+		<ee:transform doc:name="Transform Message" doc:id="85cb8128-d1b6-4009-9503-8a6a267b4082">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	bookingId: payload.bookingId default 0,
+	partnerId: payload.partnerId,
+	customerName: payload.customerName,
+	customerContactNo: payload.customerContactNo,
+	customerEmailId: payload.customerEmailId,
+	bookingDate: payload.bookingDate,
+	totalHours: payload.totalHours,
+	price: payload.price
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="updateCarBookingDetailsByBookingIdFlow" doc:id="671d0bdd-3770-4c40-945b-65386b089a19" >
+		<ee:transform doc:name="Transform Message" doc:id="5e5f325b-7c34-4c84-9695-4c7ae3a0724d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	partnerId: payload.carId,
+	customerName: payload.customerName,
+	customerContactNo: payload.customerContactNo,
+	customerEmailId: payload.customerEmailId,
+	bookingDate: payload.bookingDate ,
+	totalHours: payload.totalHours,
+	bookingId: attributes.uriParams.bookingId
+
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="interres" ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	customerEmailId: payload.customerEmailId,
+	totalHours: payload.totalHours,
+	bookingDate: payload.bookingDate as String default "",
+	customerContactNo: payload.customerContactNo,
+	customerName: payload.customerName,
+	partnerId: payload.carId,
+	bookingId: attributes.uriParams.bookingId
+	
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<http:request method="GET" doc:name="Request" doc:id="1fc41900-aebd-49ea-929d-36faa0bbf096" config-ref="HTTP_Request_configuration2" path="/api/cars">
+			<http:query-params ><![CDATA[#[output application/java
+---
+{
+	"partnerId" : vars.interres.partnerId
+}]]]></http:query-params>
+		</http:request>
+		<ee:transform doc:name="Transform Message" doc:id="6a310641-5ea0-4ad6-9628-ea06166f4e2a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+((payload[0].tariffPerHour as Number) * (vars.interres.totalHours as Number)) as String]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="pricevar" ><![CDATA[%dw 2.0
+output application/json
+---
+((payload[0].tariffPerHour as Number) * (vars.interres.totalHours as Number)) as String]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="449ef824-555c-45c7-88be-f58c5c9b5cc7" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+
+	customerEmailId: vars.interres.customerEmailId,
+	totalHours: vars.interres.totalHours,
+	price: 
+    (
+    if 
+    ((vars.interres.totalHours as Number)  > 5) 
+    ((vars.pricevar as Number) - ((vars.pricevar as Number)*10/100 )) as Number
+    
+    else  if 
+    ((vars.interres.bookingDate replace "/" with("-") ) - |P5D| >  now()) 
+    ((vars.pricevar as Number)  - ((vars.pricevar as Number) *20)/100 as Number)   
+    else (payload[0].tariffPerHour as Number)
+    ) as String , 
+    bookingDate: vars.interres.bookingDate,
+	partnerId: vars.interres.partnerId ,
+	customerName: vars.interres.customerName,
+	customerContactNo: vars.interres.customerContactNo	
+	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<car-partnerss-api:update-booking doc:name="Update Booking" doc:id="3cd140c5-fae0-414e-83a2-6ab1160b51dc" config-ref="Car_Partners_sAPI_Config" booking-id="#[vars.interres.bookingId]"/>
+	</flow>
+</mule>

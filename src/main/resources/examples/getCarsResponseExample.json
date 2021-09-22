@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "name": "OLA",
+    "contactNo": "96785435789",
+    "email": "OLACHENNAI@gmail.com",
+    "location": "CHENNAI",
+    "tariffPerHour": "650"
+  }, 
+  {
+    "id": 2,
+    "name": "OLA",
+    "contactNo": "96785435789",
+    "email": "OLACHENNAI@gmail.com",
+    "location": "CHENNAI",
+    "tariffPerHour": "650"
+  }
+]
