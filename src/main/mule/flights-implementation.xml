@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:indigo-flightss-api="http://www.mulesoft.org/schema/mule/indigo-flightss-api"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/indigo-flightss-api http://www.mulesoft.org/schema/mule/indigo-flightss-api/current/mule-indigo-flightss-api.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<flow name="getFlightsFlow" doc:id="fab8a668-f77a-4b12-9df6-1717260e9564" >
+		<set-variable value="#[output application/json&#10;---&#10;{&#10;	source: message.attributes.queryParams.source,&#10;	destination: message.attributes.queryParams.destination&#10;}]" doc:name="sourceAndDestination" doc:id="d6d6f10f-ae90-4a51-9307-3cf92f60cbb1" variableName="sourceAndDestination"/>
+		<set-variable value="#[message.attributes.queryParams.airline]" doc:name="airline" doc:id="cbaa7d33-e919-47d4-88c3-34e669f716a5" variableName="airline"/>
+		<validation:is-true doc:name="Is valid airline" doc:id="84d84a64-c7b3-4675-b3d4-3289457d1e5a" expression="#[['INDIGO','ANY'] contains upper(vars.airline)]" message="#['Invalid airline: ' ++ (vars.airline default ' ') ++ ', valid values are INDIGO, ANY']">
+			<error-mapping sourceType="VALIDATION:INVALID_BOOLEAN" targetType="APP:INVALID_AIRLINE" />
+		</validation:is-true>
+		<choice doc:name="Choice" doc:id="bb9b5fea-62f0-4cdf-9076-b091b3f31d4e" >
+			<when expression='#[upper(message.attributes.queryParams.airline) == "INDIGO"]'>
+				<flow-ref doc:name="getIndigoFlightsFlow" doc:id="29939e1b-706a-411a-8a5f-f594a55947d4" name="getIndigoFlightsFlow"/>
+			</when>
+			<otherwise>
+				<flow-ref doc:name="getAllAirlineFlightsFlow" doc:id="5160f741-e3b4-4293-9848-8375315fcee2" name="getAllAirlineFlightsFlow"/>
+			</otherwise>
+		</choice>
+		<validation:is-true doc:name="Is true" doc:id="c87b00b1-06ae-47a3-b772-781ce2cd10ac" expression="#[sizeOf(payload) &gt; 0]" message="#['No flights from '  ++ (vars.sourceAndDestination.source default ' ') &#10;++ &quot; to &quot; ++ (vars.sourceAndDestination.destination default ' ')]">
+			<error-mapping sourceType="VALIDATION:INVALID_BOOLEAN" targetType="APP:NOFLIGHTS" />
+		</validation:is-true>
+		<ee:transform doc:name="Transform Message" doc:id="bf3a3c63-2cda-417e-8b49-c03baff9ab87" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ad5b074e-c8fd-4e04-8811-32fcf1cc66bb" type="APP:INVALID_AIRLINE">
+				<ee:transform doc:name="Transform Message" doc:id="78e57b5f-6ff3-4fa2-9bff-c0e395c797ce" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": error.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="400" doc:name="httpStatus" doc:id="43d1bf8c-6e83-4edc-9dbf-30b0e167fb09" variableName="httpStatus"/>
+			</on-error-propagate>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="7c7c45a6-ca47-4e04-b5db-bd43b7e31cbd" type="APP:NOFLIGHTS">
+				<ee:transform doc:name="Transform Message" doc:id="9e5ba087-f6f0-456a-a448-823d9128713f" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"message": error.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="204" doc:name="httpStatus" doc:id="6e17e008-26e0-4687-81cc-a044ad8deb70" variableName="httpStatus"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="getAllAirlineFlightsFlow" doc:id="789de28f-f2ac-478b-9872-e44d0943f736">
+		<scatter-gather doc:name="Scatter-Gather" doc:id="b0fa13b4-5d44-4a79-a925-c83f19d249b9">
+			<route>
+				<try doc:name="Try" doc:id="bf69c53d-f031-425d-8561-fb4d7a6f06a9">
+					<flow-ref doc:name="getIndigoFlightsFlow" doc:id="bbd5bbff-e0eb-48cc-9bbe-1dd4ceb4be55" name="getIndigoFlightsFlow" />
+					<error-handler>
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="4367fc57-90ef-4afd-8073-2b44befc117d">
+							<ee:transform doc:name="[]" doc:id="509bcc60-6d0d-4f95-bc1c-a7ae15ac4b8f">
+								<ee:message>
+									<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-payload>
+								</ee:message>
+							</ee:transform>
+						</on-error-continue>
+					</error-handler>
+				</try>
+			</route>
+			<route >
+				<ee:transform doc:name="[] - other arilines" doc:id="1c68b739-7c16-49ec-a360-c99775c73c67" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+[]]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="flatten" doc:id="e0071fa3-d569-4ddc-88b8-a1c93a2c20c7">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+flatten(payload..payload)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getIndigoFlightsFlow" doc:id="6fc03a66-b84d-4de5-b073-e4b420fa7a4c" >
+		<indigo-flightss-api:get-flights doc:name="Get flights" doc:id="cc4a3a9f-c095-442b-8bb6-55b087994a90" config-ref="Indigo_Flights_sAPI_Config" source="#[message.attributes.queryParams.source]" destination="#[message.attributes.queryParams.destination]" />
+		<ee:transform doc:name="Transform Message" doc:id="ab1b9519-afed-47fb-a23c-842b156a5a40">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	departureTime: payload01.departureTime,
+	availableSeats: payload01.availableSeats,
+	price: payload01.price,
+	destination: payload01.destination,
+	flightId: (payload01.flightId as String default "") ++ 
+				"-" ++ payload01.flightCode,
+	currency: payload01.currency,
+	source: payload01.source,
+	airline: "indigo",
+	planeType: payload01.plane."type" default "",
+	totalSeats: payload01.plane.totalSeats default 0
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getFlightBookingByIdFlow" doc:id="c9a2e14e-6b0a-4db0-b009-a73100ded2b6" >
+		<set-variable value="#[message.attributes.queryParams.airline]" doc:name="airline" doc:id="4896c46f-0723-460e-8811-be1f6794c57d" variableName="airline"/>
+		<choice doc:name="Choice" doc:id="608aa05f-8f87-4433-92ad-fe9030a9c965" >
+			<when expression='#[upper(vars.airline) == "INDIGO"]'>
+				<flow-ref doc:name="getIndigoFlightBookingByIdFlow" doc:id="bb764448-dcc1-496c-8db3-1ae778560e69" name="getIndigoFlightBookingByIdFlow" />
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="2c8c176f-248c-43ba-b2bc-6b634736fbb7" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Invalid airline: " ++ vars.airline ++ 
+	', valid values are INDIGO.'
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Transform Message" doc:id="69ad1a7a-ed81-431a-8853-4777f8e9c28e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getIndigoFlightBookingByIdFlow" doc:id="cb457b70-10cd-426f-9a8d-64b9ba3fa366" >
+		<flow-ref doc:name="validateFlightBookingIdFlow" doc:id="455d948a-bfe1-4455-9a96-cc88ecae020d" name="validateHotelBookingIdFlow"/>
+		<indigo-flightss-api:get-a-booking-info doc:name="Get a booking info" doc:id="d3133a47-cad4-4a16-ae71-ff8b60c7cf19" config-ref="Indigo_Flights_sAPI_Config" booking-id="#[vars.bookingId]"/>
+		<validation:is-true doc:name="Is true" doc:id="9c2aaf14-fb87-4d15-96a1-397ed7ea4ab7" expression='#[payload.seatsBooked &gt; 0 or payload.flightCode == "-"]' message="#[&quot;bookingId: &quot; ++ (vars.bookingId default '') ++ &quot; not available for airline: &quot; ++ &#10;(vars.airline default '')]">
+			<error-mapping sourceType="VALIDATION:INVALID_BOOLEAN" targetType="APP:NO_BOOKINGS" />
+		</validation:is-true>
+		<ee:transform doc:name="Transform Message" doc:id="6ce0475c-b594-4754-8b71-11bdf4193d6b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	departureTime: payload.departureTime,
+	passengerName: payload.passengerName,
+	passengerIdProof: payload.passengerIdProof,
+	flightId: (payload.flightCodedefault "") ++ "-" ++ payload.flightId as String,
+	currency: payload.currency,
+	departureDate: payload.departureDate,
+	bookingdate: payload.bookingdate,
+	bookingId: vars.bookingId,
+	seatsBooked: payload.seatsBooked,
+	pricePerSeat: payload.pricePerSeat
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="44e1023f-7179-43e8-bd5e-95330f37b88f" type="APP:NO_BOOKINGS">
+				<ee:transform doc:name="Transform Message" doc:id="1e42d4c4-5a3a-4915-8b4f-85ac9b9925bd">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": error.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="404" doc:name="httpStatus" doc:id="0b7fc0f6-ef5e-40e3-8f0d-027790603fb5" variableName="httpStatus" />
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="cancelFlightBookingByIdFlow" doc:id="a1f72300-fd63-4606-bf7f-6c157cc97a16" >
+		<set-variable value="#[message.attributes.queryParams.airline]" doc:name="airline" doc:id="932c9856-47af-4d69-a184-364e77c0cba8" variableName="airline"/>
+		<choice doc:name="Choice" doc:id="5f9f5239-11a3-4481-853f-23579268988d" >
+			<when expression='#[upper(vars.airline) == "INDIGO"]'>
+				<flow-ref doc:name="cancelIndigoFlightBookingByIdFlow" doc:id="3c796593-2882-4924-9296-47bc5eefffb5" name="cancelIndigoFlightBookingByIdFlow" />
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="dd330bb5-2e8b-4613-8204-913ff338eb3c" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Invalid airline: " ++ vars.airline
+		++ ', valid values are INDIGO.'
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Transform Message" doc:id="e293c7c3-cb5b-4d37-8bd3-7853f62a2f92" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="cancelIndigoFlightBookingByIdFlow" doc:id="d229235e-f630-423c-919e-af4e589eef38" >
+		<flow-ref doc:name="validateFlightBookingIdFlow" doc:id="d56a9078-70a3-4db3-bcb6-1b0001f134a8" name="validateFlightBookingIdFlow"/>
+		<indigo-flightss-api:delete-booking-by-booking-id doc:name="Delete booking by booking id" doc:id="4d31aab1-0959-43f5-b3e1-9de68ca264a5" config-ref="Indigo_Flights_sAPI_Config" booking-id="#[vars.bookingId]"/>
+		<validation:is-true doc:name="Is true" doc:id="ff36819b-9d59-4199-bd99-5a4e18bea3ad" expression='#[payload.message == "Booking Cancelled Successfully"]' message="#[&quot;bookingId: &quot; ++ (vars.bookingId default '') ++ &quot; not available for airline: &quot; ++ &#10;(vars.airline default '')]">
+			<error-mapping sourceType="VALIDATION:INVALID_BOOLEAN" targetType="APP:NO_BOOKINGS" />
+		</validation:is-true>
+		<ee:transform doc:name="Transform Message" doc:id="f72c1ce4-9fc0-4e4f-a812-dbcc06c05287" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="37eb4aff-e574-4763-84b0-7d3adf4a7997" type="APP:NO_BOOKINGS">
+				<ee:transform doc:name="Transform Message" doc:id="442d0e59-4d3a-4929-8ada-d06a7ed12642" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: error.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="404" doc:name="httpStatus" doc:id="faf27570-18f4-47a1-b68a-21691ef0dcc9" variableName="httpStatus"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="postFlightBookingFlow" doc:id="a528f1e0-29c8-46d9-99ef-c934c04c7091" >
+		<set-variable value="#[message.attributes.queryParams.airline]" doc:name="airline" doc:id="17736ea4-21e0-45c9-941a-4d58a627b0fd" variableName="airline"/>
+		<choice doc:name="Choice" doc:id="cb101d59-b201-40bd-a8b1-5c79495e08b1" >
+			<when expression='#[upper(vars.airline) == "INDIGO"]'>
+				<flow-ref doc:name="postIndigoFlightBookingFlow" doc:id="ca356dbc-c386-4fed-adf6-c7ebcf9966b2" name="postIndigoFlightBookingFlow" />
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="b159067e-cedf-43ba-8b60-0b7ce36fa724" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Invalid airline: " ++ vars.airline ++ 
+	', valid values are INDIGO.'
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Transform Message" doc:id="e4ad491e-cc78-4c31-84c9-7081285fffdd" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="postIndigoFlightBookingFlow" doc:id="7e4e1b44-432a-44c0-b2df-5c1d668709c9" >
+		<set-variable value="#[payload]" doc:name="postRequest" doc:id="724c2671-a715-4fbf-b54e-f3f5a34f93aa" variableName="postRequest"/>
+		<indigo-flightss-api:get-a-flight-info doc:name="Get a flight info" doc:id="dab5f986-7ad0-44e2-b83c-5a7301d88d22" config-ref="Indigo_Flights_sAPI_Config" flight-id="#[dw::core::Strings::substringAfter(vars.postRequest.flightId,'-')]" />
+		<validation:is-true doc:name="Is true" doc:id="72bc359c-94d7-455d-9c8d-d657f3066289" expression='#[payload.departureTime != "" or payload.availableSeats &gt; 0 ]' message="#[&quot;No flights/seats available for flight Id: &quot; ++ (vars.postRequest.flightId default '')]">
+			<error-mapping sourceType="VALIDATION:INVALID_BOOLEAN" targetType="APP:NO_FLIGHTS_OR_SEATS" />
+		</validation:is-true>
+		<ee:transform doc:name="Transform Message" doc:id="a1390d45-4896-4e3f-afa3-10443c4bdfd3" >
+			<ee:message >
+				<ee:set-payload resource="flight_booking.dwl" />
+			</ee:message>
+		</ee:transform>
+		<indigo-flightss-api:book-a-flight doc:name="book a flight" doc:id="e5eff3fe-2b42-4738-9f9b-0e8c8ecf04cd" config-ref="Indigo_Flights_sAPI_Config"/>
+		<ee:transform doc:name="Transform Message" doc:id="a816f143-7123-42cd-b001-566be9b08e2b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	departureTime: payload.departureTime,
+	passengerName: payload.passengerName,
+	passengerIdProof: payload.passengerIdProof,
+	flightId: (payload.flightId default "") ++ "-" ++ payload.flightCode,
+	currency: payload.currency,
+	departureDate: payload.departureDate,
+	bookingdate: payload.bookingdate,
+	bookingId: payload.bookingId,
+	seatsBooked: payload.seatsBooked,
+	pricePerSeat: payload.pricePerSeat
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c214334f-843d-4d76-ab54-e2acda6af7fe" type="APP:NO_FLIGHTS_OR_SEATS">
+				<ee:transform doc:name="Transform Message" doc:id="ad584435-a35c-4b37-a7f6-29e3175daef1" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: error.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="400" doc:name="httpStatus" doc:id="92f973ee-cf17-451b-8878-ff0b75dd0ad5" variableName="httpStatus"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="updateFlightBookingByIdFlow" doc:id="4cda7a34-e83b-412d-9142-064e38138356" >
+		<set-variable value="#[message.attributes.queryParams.airline]" doc:name="airline" doc:id="9e15bd88-63c1-4844-bffe-d112eea7576f" variableName="airline"/>
+		<choice doc:name="Choice" doc:id="d80aa4f2-da81-4b62-bfcb-6103f212cde3" >
+			<when expression='#[upper(vars.airline) == "INDIGO"]'>
+				<flow-ref doc:name="updateIndigoFlightBookingByIdFlow" doc:id="cdab967b-1980-4e1a-a54a-04a69eec0b45" name="updateIndigoFlightBookingByIdFlow" />
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="ae9ae0a1-ea07-42fe-a301-4f096a61b5cb" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Invalid airline: " ++ vars.airline ++ 
+	', valid values are INDIGO.'
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Transform Message" doc:id="74e413f4-878f-4d9c-928f-ee28bdf8eada" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="updateIndigoFlightBookingByIdFlow" doc:id="509d79b4-10ee-4efa-b694-054d17bf9bc6" >
+		<set-variable value="#[payload]" doc:name="updateRequest" doc:id="69475999-99b1-441f-b364-d094cf85ebab" variableName="updateRequest"/>
+		<flow-ref doc:name="getIndigoFlightBookingByIdFlow" doc:id="3a39d9a0-325a-4932-8cda-c5a9a7212e06" name="getIndigoFlightBookingByIdFlow" />
+		<indigo-flightss-api:get-a-flight-info doc:name="Get a flight info" doc:id="e505fa39-b657-4d14-bd4f-bbb23acb3084" config-ref="Indigo_Flights_sAPI_Config" flight-id="#[dw::core::Strings::substringAfter(vars.updateRequest.flightId,'-')]"/>
+		<validation:is-true doc:name="Is true" doc:id="4abd136d-392a-4463-a529-26e2f3051ac1" expression='#[payload.departureTime != "" or payload.availableSeats &gt; 0 ]' message="#[&quot;No flights/seats available for flight Id: &quot; ++ (vars.updateRequest.flightId default '')]">
+			<error-mapping sourceType="VALIDATION:INVALID_BOOLEAN" targetType="APP:NO_FLIGHTS_OR_SEATS" />
+		</validation:is-true>
+		<ee:transform doc:name="Transform Message" doc:id="a66aea13-9498-43b8-a4f5-5bf905fe0953">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+import dw::core::Periods
+var departureDate = vars.updateRequest.departureDate as Date{
+	format: "yyyy/MM/dd"
+}
+var bookingDate = vars.updateRequest.bookingdate as Date{
+	format: "yyyy/MM/dd"
+}
+var vDate = Periods::between(departureDate,bookingDate)
+var discount = (price,value,toCheck,percent) ->
+                (if ( value > toCheck ) ((price * percent)/100)
+                else 0)
+var price = payload.price default 0
+---
+{
+	departureTime: payload.departureTime,
+	passengerName: vars.updateRequest.passengerName,
+	flightCode: payload.flightCode,
+	passengerIdProof: vars.updateRequest.passengerIdProof,
+	flightId: payload.flightId as String,
+	currency: payload.currency,
+	departureDate: vars.updateRequest.departureDate,
+	bookingdate: vars.updateRequest.bookingdate,
+	seatsBooked: vars.updateRequest.seatsBooked,
+	pricePerSeat: (price -
+        	(discount(price,vDate.days,15,10)	// 10% discount for date
+            	+ discount(price,vars.updateRequest.seatsBooked,5,20))	// 20 % discount for seats
+             )
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<indigo-flightss-api:upsert-booking-info doc:name="Upsert booking info" doc:id="fad95954-e5d9-4e51-b2a5-31249e7ba8ee" config-ref="Indigo_Flights_sAPI_Config" booking-id="#[vars.bookingId]"/>
+		<ee:transform doc:name="Transform Message" doc:id="0c4b07f9-c093-4136-9a11-5b121611a2b1" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	departureTime: payload.departureTime,
+	passengerName: payload.passengerName,
+	passengerIdProof: payload.passengerIdProof,
+	flightId: (payload.flightCode default "") ++ "-" ++ payload.flightId,
+	currency: payload.currency,
+	departureDate: payload.departureDate,
+	bookingdate: payload.bookingdate,
+	seatsBooked: payload.seatsBooked,
+	pricePerSeat: payload.pricePerSeat
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="ebc04ceb-6cfd-444b-9344-721d0a96f228" type="APP:NO_FLIGHTS_OR_SEATS">
+				<ee:transform doc:name="Transform Message" doc:id="65286dc4-62bf-4874-9ef2-1d5d520443d2" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: error.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="400" doc:name="httpStatus" doc:id="20bf232b-5af9-4507-8313-68fe142d6274" variableName="httpStatus"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="validateFlightBookingIdFlow" doc:id="b33628ac-af5b-41ce-be30-ea68c2e0d7d3" >
+		<set-variable value="#[message.attributes.uriParams.bookingId]" doc:name="bookingId" doc:id="714f3f16-5dd7-41a5-8f53-838c2f86c1e2" variableName="bookingId" />
+		<validation:is-number numberType="INTEGER" doc:name="Is number" doc:id="deb66555-3b12-401e-be14-f65f4a018b96" value="#[vars.bookingId]" message='#["Invalid bookingId: " ++ vars.bookingId ++ ", should be an integer value"]'>
+			<error-mapping sourceType="VALIDATION:INVALID_NUMBER" targetType="APP:INVALID_BOOKING_ID" />
+		</validation:is-number>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="de3872b4-35cb-4fca-b3a6-aaf724294172" type="APP:INVALID_BOOKING_ID">
+				<ee:transform doc:name="Transform Message" doc:id="9042aa30-b106-4779-a343-a5b8c41de16c" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: error.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="400" doc:name="httpStatus" doc:id="f33ee2a9-1bcc-47cb-a4aa-0b882c1bf670" variableName="httpStatus"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>

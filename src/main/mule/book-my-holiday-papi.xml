@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd ">
+<mule xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd ">
     <apikit:config name="book-my-holiday-papi-config" api="resource::697af2f9-4e10-406c-a7b1-d8ecfd14aca2:book-my-holiday-papi:1.0.0:raml:zip:book-my-holiday-papi.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <flow name="book-my-holiday-papi-main">
         <http:listener path="/api/*" config-ref="book-my-holiday-papi-httpListenerConfig">
@@ -145,55 +145,10 @@ output application/json
         </ee:transform>
     </flow>
     <flow name="put:\flight\bookings\(bookingId):application\json:book-my-holiday-papi-config">
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
-            <ee:variables>
-                <ee:set-variable variableName="bookingId">attributes.uriParams.'bookingId'</ee:set-variable>
-            </ee:variables>
-        </ee:transform>
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{
-  bookingId: "IDGO6E20210926-0002",
-  flightId: "6E-2214",
-  departureDate: "2021/09/26",
-  departureTime: "09:00",
-  passengerName: "Akshay Kapoor",
-  passengerIdProof: "AFRGT0245R",
-  seatsBooked: 3,
-  pricePerSeat: 4500,
-  currency: "INR",
-  bookingdate: "2021/09/12"
-}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
+		<flow-ref doc:name="updateFlightBookingByIdFlow" doc:id="d4f90ebf-ab04-4ae2-baba-526d70800f2f" name="updateFlightBookingByIdFlow"/>
     </flow>
     <flow name="put:\hotel\bookings\(bookingId):application\json:book-my-holiday-papi-config">
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
-            <ee:variables>
-                <ee:set-variable variableName="bookingId">attributes.uriParams.'bookingId'</ee:set-variable>
-            </ee:variables>
-        </ee:transform>
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{
-  bookingId: "1",
-  hotelId: "1",
-  hotelName: "TAJ CHENNAI",
-  roomCategory: "LUXURY",
-  customerName: "Murali",
-  customerContactNo: "8645772533",
-  noOfRooms: 3,
-  duration: 2,
-  totalAmount: "10000"
-}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
+		<flow-ref doc:name="putHotelBookingFlow" doc:id="c890e087-15fc-481f-b279-35aa5bc74fa4" name="putHotelBookingFlow"/>
     </flow>
     <flow name="delete:\car\bookings\(bookingId):book-my-holiday-papi-config">
         <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
@@ -213,38 +168,10 @@ output application/json
         </ee:transform>
     </flow>
     <flow name="delete:\flight\bookings\(bookingId):book-my-holiday-papi-config">
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
-            <ee:variables>
-                <ee:set-variable variableName="bookingId">attributes.uriParams.'bookingId'</ee:set-variable>
-            </ee:variables>
-        </ee:transform>
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{
-  message: "booking cancelled successfully"
-}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
+		<flow-ref doc:name="cancelFlightBookingById" doc:id="8d170289-224f-458e-9568-7d1f7609db44" name="cancelFlightBookingByIdFlow"/>
     </flow>
     <flow name="delete:\hotel\bookings\(bookingId):book-my-holiday-papi-config">
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
-            <ee:variables>
-                <ee:set-variable variableName="bookingId">attributes.uriParams.'bookingId'</ee:set-variable>
-            </ee:variables>
-        </ee:transform>
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{
-  message: "booking cancelled successfully"
-}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
+		<flow-ref doc:name="cancelHotelBookingByIdFlow" doc:id="50d4bde1-ee1d-4c81-bf14-4664ab860766" name="cancelHotelBookingByIdFlow"/>
     </flow>
     <flow name="get:\cars:book-my-holiday-papi-config">
         <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
@@ -274,151 +201,16 @@ output application/json
         </ee:transform>
     </flow>
     <flow name="get:\flights:book-my-holiday-papi-config">
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-[
-  {
-    flightId: "6E-2214",
-    airline: "indigo",
-    departureTime: "09:00",
-    source: "delhi",
-    destination: "mumbai",
-    availableSeats: 15,
-    price: 5000,
-    currency: "INR",
-    planeType: "Boeing 737",
-    totalSeats: 150
-  }, 
-  {
-    flightId: "6E-2243",
-    airline: "indigo",
-    departureTime: "22:00",
-    source: "delhi",
-    destination: "mumbai",
-    availableSeats: 100,
-    price: 4000,
-    currency: "INR",
-    planeType: "Boeing 777",
-    totalSeats: 300
-  }
-]]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
+		<flow-ref doc:name="getFlightsFlow" doc:id="b04f3f66-c3f8-4045-b0bf-daba96d927b6" name="getFlightsFlow"/>
     </flow>
     <flow name="get:\hotels:book-my-holiday-papi-config">
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-[
-  {
-    hotelId: "TAJGP1121",
-    hotelName: "TAJ CHANDHIGARH",
-    hotelGroup: "TAJ",
-    rating: 5,
-    addressCity: "CHANDHIGARH",
-    addressPinCode: 150563,
-    addressState: "PUNJAB",
-    totalRooms: 150,
-    availableRooms: 65,
-    room: [
-      {
-        category: "LUXURY",
-        price: "7000"
-      }, 
-      {
-        category: "NORMAL",
-        price: "4000"
-      }
-    ],
-    checkIn: "12:00",
-    checkOut: "12:00",
-    contactPhoneNo: "9825478564",
-    contactEmail: "chandhigarh@taj.com"
-  }, 
-  {
-    hotelId: "TAJGP1122",
-    hotelName: "TAJ DELHI",
-    hotelGroup: "TAJ",
-    rating: 4,
-    addressCity: "DELHI",
-    addressPinCode: 100563,
-    addressState: "DELHI",
-    totalRooms: 150,
-    availableRooms: 65,
-    room: [
-      {
-        category: "LUXURY",
-        price: "10000"
-      }, 
-      {
-        category: "NORMAL",
-        price: "6000"
-      }
-    ],
-    checkIn: "12:00",
-    checkOut: "12:00",
-    contactPhoneNo: "9999988888",
-    contactEmail: "delhi@taj.com"
-  }
-]]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
+		<flow-ref doc:name="getHotelsFlow" doc:id="2c23c209-439e-443e-9974-2ca9fa862ae4" name="getHotelsFlow"/>
     </flow>
     <flow name="get:\hotel\bookings\(bookingId):book-my-holiday-papi-config">
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
-            <ee:variables>
-                <ee:set-variable variableName="bookingId">attributes.uriParams.'bookingId'</ee:set-variable>
-            </ee:variables>
-        </ee:transform>
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{
-  bookingId: "1",
-  hotelId: "1",
-  hotelName: "TAJ CHENNAI",
-  roomCategory: "LUXURY",
-  customerName: "Murali",
-  customerContactNo: "8645772533",
-  noOfRooms: 3,
-  duration: 2,
-  totalAmount: "10000"
-}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
+		<flow-ref doc:name="getHotelBookingByIdFlow" doc:id="1b3f47aa-09c6-4fe3-8e53-6777eb0eb14d" name="getHotelBookingByIdFlow"/>
     </flow>
     <flow name="get:\flight\bookings\(bookingId):book-my-holiday-papi-config">
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
-            <ee:variables>
-                <ee:set-variable variableName="bookingId">attributes.uriParams.'bookingId'</ee:set-variable>
-            </ee:variables>
-        </ee:transform>
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{
-  bookingId: "IDGO6E20210926-0002",
-  flightId: "6E-2214",
-  departureDate: "2021/09/26",
-  departureTime: "09:00",
-  passengerName: "Akshay Kapoor",
-  passengerIdProof: "AFRGT0245R",
-  seatsBooked: 3,
-  pricePerSeat: 4500,
-  currency: "INR",
-  bookingdate: "2021/09/12"
-}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
+		<flow-ref doc:name="getFlightBookingByIdFlow" doc:id="75a4f22c-e1d4-4ac0-886d-3921f3b0962d" name="getFlightBookingByIdFlow"/>
     </flow>
     <flow name="get:\car\bookings\(bookingId):book-my-holiday-papi-config">
         <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core">
@@ -464,44 +256,9 @@ output application/json
         </ee:transform>
     </flow>
     <flow name="post:\flight\bookings:application\json:book-my-holiday-papi-config">
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{
-  bookingId: "IDGO6E20210926-0002",
-  flightId: "6E-2214",
-  departureDate: "2021/09/26",
-  departureTime: "09:00",
-  passengerName: "Akshay Kapoor",
-  passengerIdProof: "AFRGT0245R",
-  seatsBooked: 3,
-  pricePerSeat: 4500,
-  currency: "INR",
-  bookingdate: "2021/09/12"
-}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
+		<flow-ref doc:name="postFlightBookingFlow" doc:id="f89ddd1a-59ea-4f47-9502-d028b12f8bdd" name="postFlightBookingFlow"/>
     </flow>
     <flow name="post:\hotel\bookings:application\json:book-my-holiday-papi-config">
-        <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{
-  bookingId: "1",
-  hotelId: "1",
-  hotelName: "TAJ CHENNAI",
-  roomCategory: "LUXURY",
-  customerName: "Murali",
-  customerContactNo: "8645772533",
-  noOfRooms: 3,
-  duration: 2,
-  totalAmount: "10000"
-}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
+		<flow-ref doc:name="postHotelBookingFlow" doc:id="6f59994d-3e85-4f25-906d-83b6464c5ebd" name="postHotelBookingFlow"/>
     </flow>
 </mule>

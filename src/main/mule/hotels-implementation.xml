@@ -1,0 +1,526 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<flow name="getHotelsFlow" doc:id="ba809ecf-33a4-408b-b72b-a19e8fe96c25" >
+		<ee:transform doc:name="vars" doc:id="56f04a20-61f7-4be9-a0b8-4fe180211ff7" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="hotelGroup" ><![CDATA[%dw 2.0
+output application/json
+---
+message.attributes.queryParams.hotelGroup]]></ee:set-variable>
+				<ee:set-variable variableName="location" ><![CDATA[%dw 2.0
+output application/json
+---
+message.attributes.queryParams.location]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<choice doc:name="Choice" doc:id="3d58fa34-35fa-48e1-bf4f-de329eccdf73" >
+			<when expression="#[upper(vars.hotelGroup) == 'TAJ']">
+				<flow-ref doc:name="getTajHotelsFlow" doc:id="4a98d16c-355e-4274-8775-d74b95715d14" name="getTajHotelsFlow" />
+			</when>
+			<otherwise>
+				<flow-ref doc:name="getAllHotelsFlow" doc:id="300051ec-59ef-4998-8e44-4e2553b11d8e" name="getAllHotelsFlow"/>
+			</otherwise>
+		</choice>
+		<validation:is-true doc:name="Is true" doc:id="3fc6828b-06cc-460c-9722-093401bf5867" expression="#[sizeOf(payload) &gt; 0]" message='#["No hotels available at location: " ++ vars.location]'>
+			<error-mapping sourceType="VALIDATION:INVALID_BOOLEAN" targetType="APP:NO_HOTELS" />
+		</validation:is-true>
+		<ee:transform doc:name="Transform Message" doc:id="da7df803-446d-48b7-871e-74d8ae016047" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="f65222ac-6c56-4868-9470-784a53469233" type="APP:NO_HOTELS">
+				<ee:transform doc:name="Transform Message" doc:id="0f7cb74c-0c53-4f5c-9838-0fb56c00f23a" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: error.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="204" doc:name="httpStatus" doc:id="79db1282-5b02-49c2-ad50-9d5bbb87bd73" variableName="httpStatus"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="getAllHotelsFlow" doc:id="310b7c7f-9a1a-4951-bfda-dc8ef71e2705" >
+		<scatter-gather doc:name="Scatter-Gather" doc:id="8f7dfd71-95cf-4d09-85ac-24dcdc59f693" >
+			<route >
+				<try doc:name="Try" doc:id="8d2c0620-8690-4dee-a8e2-c287b25b311d" >
+					<flow-ref doc:name="getTajHotelsFlow" doc:id="c8d2076e-c8fa-4b3b-a6f4-aa1e874b4adc" name="getTajHotelsFlow"/>
+					<error-handler >
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="dbe26f1f-d128-46dd-830f-33da50fb3260" >
+							<ee:transform doc:name="[]" doc:id="1ea08e19-0016-4cbe-bf43-377091e3751b" >
+								<ee:message >
+									<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-payload>
+								</ee:message>
+							</ee:transform>
+						</on-error-continue>
+					</error-handler>
+				</try>
+			</route>
+			<route >
+				<ee:transform doc:name="[] - other hotels" doc:id="6294f19e-f2d7-44f1-af7f-baa8a57c005c" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+[]]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="flatten" doc:id="d68eedc3-c72a-424d-8521-60a7e38f0e10" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+flatten(payload..payload)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getTajHotelsFlow" doc:id="95f7b1a7-5fd8-4ce9-af5d-5bf288653d1a" >
+		<ee:transform doc:name="Transform Message" doc:id="101a2e1d-f35a-483c-a6f1-71356c51071c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://www.tajgroup.org/TajGroupHotelBookings/
+---
+{
+	ns0#listHotelsByLocation: {
+		city: attributes.queryParams.location
+	}
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="location" ><![CDATA[%dw 2.0
+output application/json
+---
+message.attributes.queryParams.location]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<wsc:consume operation="listHotelsByLocation" doc:name="Consume" doc:id="220c23ee-4e76-4dff-8817-d059983c0f2d" config-ref="Web_Service_Consumer_Config"/>
+		<validation:is-true doc:name="Is true" doc:id="4cbd23ac-e078-40fd-8da0-2dfbf4982d26" expression='#[payload.body.Fault.faultcode != "1"]' message='#["No hotels available at location: " ++ vars.location]'>
+			<error-mapping sourceType="VALIDATION:INVALID_BOOLEAN" targetType="APP:NO_HOTELS" />
+		</validation:is-true>
+		<ee:transform doc:name="Transform Message" doc:id="ebeb0a48-7eb7-4ed9-be90-4a9c6953b6a6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var fContact = (contact,fString) -> (contact filter($."type" == fString))
+---
+payload.body.body.*listHotelsByLocationResponse map ( hotels , indexOfHotels ) -> {
+	hotelGroup: "TAJ",
+	contactEmail: fContact(hotels.hotel.*contact,"email")[0].detail default "",
+	rating: hotels.hotel.rating as Number default 0,
+	addressState: hotels.hotel.address.state default "",
+	hotelId: hotels.hotel.hotelID default "",
+	hotelName: hotels.hotel.hotelName default "",
+	addressPinCode: hotels.hotel.address.pinCode as Number default 0,
+	room: hotels.hotel.*room map ( room , indexOfRoom ) -> {
+		price: room.price default "",
+		category: room.category default ""
+	},
+	totalRooms: hotels.hotel.totalRooms default 0,
+	checkIn: hotels.hotel.checkIn default "",
+	availableRooms: hotels.hotel.availableRooms default 0,
+	contactPhoneNo: fContact(hotels.hotel.*contact,"phone")[0].detail default "",
+	checkOut: hotels.hotel.checkOut default "",
+	addressCity: hotels.hotel.address.city default ""
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="c4d3c9ba-7b6e-4b5f-87a0-4ccdefc05a93" />
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="47b7e360-7470-4eab-8e93-9ebfc5f3f44b" type="APP:NO_HOTELS">
+				<ee:transform doc:name="Transform Message" doc:id="1959db9f-5563-4d18-a238-7ba6fa1e77b7" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: error.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="204" doc:name="httpStatus" doc:id="9506eb6b-954f-4f9c-8a1c-fdd1728f1c7b" variableName="httpStatus"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="getHotelBookingByIdFlow" doc:id="e2e0af3d-4c88-4d16-b667-6ffbfde6b432" >
+		<set-variable value="#[message.attributes.queryParams.hotelGroup]" doc:name="hotelGroup" doc:id="93ae28d5-c658-4df3-9dd0-8042a671c102" variableName="hotelGroup"/>
+		<choice doc:name="Choice" doc:id="21d7c3d3-c48d-4742-b892-07cab98a6e75" >
+			<when expression='#[upper(vars.hotelGroup) == "TAJ"]'>
+				<flow-ref doc:name="getTajHotelBookingByIdFlow" doc:id="417e1eb7-d2f4-48b1-ab96-506f5af0456a" name="getTajHotelBookingByIdFlow" />
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="4360b9a6-9b80-4c1b-ad1e-618d9c9cea1d" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Invalid hotelGroup: " ++ vars.hotelGroup ++ 
+	', valid values are TAJ.'
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Transform Message" doc:id="7f810b08-76ac-4e8a-aead-88661c1d4177" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getTajHotelBookingByIdFlow" doc:id="85bb64dd-e4d5-4fbe-b0fd-a2fd2b00aadf" >
+		<flow-ref doc:name="validateHotelBookingIdFlow" doc:id="c7d25b0d-93f8-4cde-bfb3-a0cd7b11635f" name="validateHotelBookingIdFlow"/>
+		<ee:transform doc:name="Transform Message" doc:id="00456e4f-a0eb-4927-b18a-b65de22fd868" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://www.tajgroup.org/TajGroupHotelBookings/
+---
+{
+	ns0#getBookingDetailsById: {
+		bookingId: attributes.uriParams.bookingId
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume operation="getBookingDetailsById" doc:name="Consume" doc:id="ab29232c-bb9a-48b0-8395-c847656ebd05" config-ref="Web_Service_Consumer_Config"/>
+		<validation:is-true doc:name="Is true" doc:id="3646d618-f712-4335-bce7-359d19b56b3b" expression='#[payload.body.body.bookingId != "0"]' message="#[&quot;bookingId: &quot; ++ (vars.bookingId default '') ++ &quot; not available for hotel group: &quot; ++ &#10;(vars.hotelGroup default '')]">
+			<error-mapping sourceType="VALIDATION:INVALID_BOOLEAN" targetType="APP:NO_BOOKINGS" />
+		</validation:is-true>
+		<ee:transform doc:name="Transform Message" doc:id="b7902e46-64e8-4666-bf87-c4ebd88851f8" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+ns ns0 http://www.tajgroup.org/TajGroupHotelBookings/
+---
+{
+	duration: payload.body.body.duration as Number default 0,
+	totalAmount: payload.body.body.totalAmount,
+	roomCategory: payload.body.body.roomCategory default "",
+	hotelId: payload.body.body.hotelId default "",
+	noOfRooms: payload.body.body.noOfRooms as Number default 0,
+	hotelName: "TAJ",
+	customerContactNo: payload.body.body.customerContactNo default "",
+	bookingId: payload.body.body.bookingId,
+	customerName: payload.body.body.customerName default ""
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="871ddba3-d7c8-4b9b-b4fe-01b3e554bd8b" type="APP:NO_BOOKINGS">
+				<ee:transform doc:name="Transform Message" doc:id="f3d17045-22bf-40f6-8533-da9b4458f80f" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: error.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="404" doc:name="httpStatus" doc:id="701cdd37-155c-4572-a946-0adc456236a9" variableName="httpStatus"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="cancelHotelBookingByIdFlow" doc:id="8e6aff6f-c7e7-4348-bbc4-bb6c9ac4af7a" >
+		<set-variable value="#[message.attributes.queryParams.hotelGroup]" doc:name="hotelGroup" doc:id="7e7640d8-dba2-4095-a3e5-efe2e4f2f4ea" variableName="hotelGroup"/>
+		<choice doc:name="Choice" doc:id="0092df4a-a098-4ce2-9f1f-1e825e54ff05" >
+			<when expression='#[upper(vars.hotelGroup) == "TAJ"]'>
+				<flow-ref doc:name="cancelTajHotelBookingByIdFlow" doc:id="53ae938e-e594-49a8-9702-47a7f14c1d7a" name="cancelTajHotelBookingByIdFlow" />
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="83e740c0-948e-4834-877b-24d88aa11ac9" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Invalid hotelGroup: " ++ vars.hotelGroup ++ 
+	', valid values are TAJ.'
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Transform Message" doc:id="00309342-3267-4d1e-b3e4-0841a588a190" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="cancelTajHotelBookingByIdFlow" doc:id="2337f5ad-9b7b-4423-a143-1c9752d813bb" >
+		<flow-ref doc:name="validateHotelBookingIdFlow" doc:id="16934ce0-248f-42a2-879f-04ca0c834e89" name="validateHotelBookingIdFlow"/>
+		<ee:transform doc:name="Transform Message" doc:id="d8e2fc33-509a-466f-9228-350edbcd4142" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://www.tajgroup.org/TajGroupHotelBookings/
+---
+{
+	ns0#deleteBookingById: {
+		bookingId: vars.bookingId
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume operation="deleteBookingById" doc:name="Consume" doc:id="7a997a36-9d4b-46e1-9090-221690230c18" config-ref="Web_Service_Consumer_Config"/>
+		<validation:is-true doc:name="Is true" doc:id="c71c6d1a-7b10-48f1-be65-85ed8404792c" expression='#[payload.body.message == "Booking Cancelled Successfully"]' message="#[&quot;bookingId: &quot; ++ (vars.bookingId default '') ++ &quot; not available for hotel group: &quot; ++ &#10;(vars.hotelGroup default '')]">
+			<error-mapping sourceType="VALIDATION:INVALID_BOOLEAN" targetType="APP:NO_BOOKINGS" />
+		</validation:is-true>
+		<ee:transform doc:name="Transform Message" doc:id="08bf8f9a-a2ed-4133-9f99-476990f9666f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: payload.body.message
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="84f6a003-c8ff-4949-9f61-257ce6182f0f" type="APP:NO_BOOKINGS">
+				<ee:transform doc:name="Transform Message" doc:id="e35c1c63-7bda-47c8-abd1-47da41807af2" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: error.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="404" doc:name="httpStatus" doc:id="7e95ace7-e437-4175-bfe8-128d627dbf74" variableName="httpStatus"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="postHotelBookingFlow" doc:id="191401da-ca67-4172-81db-8c5d5217d2c3" >
+		<set-variable value="#[message.attributes.queryParams.hotelGroup]" doc:name="hotelGroup" doc:id="819d875e-d0ec-4d55-aae8-bf6e450087b5" variableName="hotelGroup"/>
+		<choice doc:name="Choice" doc:id="34c48819-8499-47d4-8919-e62961fac427" >
+			<when expression='#[upper(vars.hotelGroup) == "TAJ"]'>
+				<flow-ref doc:name="postTajHotelBookingFlow" doc:id="01ffe55c-e59d-4601-9907-f7691aa5a97d" name="postTajHotelBookingFlow" />
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="18e2ac61-19bb-4c9d-beac-3209f156add9" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Invalid hotelGroup: " ++ vars.hotelGroup ++ 
+	', valid values are TAJ.'
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Transform Message" doc:id="80827788-83d1-4d4b-b61b-16a00e1a4138" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="postTajHotelBookingFlow" doc:id="4cf4da53-0180-4de0-ab1c-6b51d5dbeedc" >
+		<ee:transform doc:name="Transform Message" doc:id="c8a0ff16-b1df-471a-a56a-015c738d2d33" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://www.tajgroup.org/TajGroupHotelBookings/
+---
+{
+	ns0#getHotelByHotelId: {
+		hotelId: payload.hotelId
+	}
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="postRequest" ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<wsc:consume operation="getHotelByHotelId" doc:name="getHotelById" doc:id="6dcb21f7-2880-40a3-a3c4-9ee07c08260d" config-ref="Web_Service_Consumer_Config"/>
+		<validation:is-true doc:name="Is true" doc:id="3bd1747b-d3d6-46af-a673-1bad0feb74d2" expression='#[payload.body.body.getHotelByHotelIdResponse.hotelId != null]' message='#["No hotels available for hotel id: " ++ vars.postRequest.hotelId]'>
+			<error-mapping sourceType="VALIDATION:INVALID_BOOLEAN" targetType="APP:INVALID_HOTEL_ID" />
+		</validation:is-true>
+		<ee:transform doc:name="Transform Message" doc:id="48c6fa8a-a77c-416d-aac1-6f5515cb28fc">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://www.tajgroup.org/TajGroupHotelBookings/
+---
+{
+	ns0#bookHotel: {
+		hotelId: vars.postRequest.hotelId,
+		roomCategory: vars.postRequest.roomCategory,
+		customerName: vars.postRequest.customerName,
+		customerContactNo: vars.postRequest.customerContactNo,
+		noOfRooms: vars.postRequest.noOfRooms as String,
+		duration: vars.postRequest.duration as String
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume doc:name="postHotelBooking" doc:id="fbedb458-89b2-46e3-89f1-93fafdbd78fe" config-ref="Web_Service_Consumer_Config" operation="bookHotel"/>
+		<ee:transform doc:name="Transform Message" doc:id="e1aef614-565d-425e-a729-bc7f2fe1f3a7" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+ns ns0 http://www.tajgroup.org/TajGroupHotelBookings/
+---
+{
+	duration: payload.body.body.bookHotelResponse.duration as Number default 0,
+	totalAmount: payload.body.body.bookHotelResponse.totalAmount,
+	roomCategory: payload.body.body.bookHotelResponse.roomCategory default "",
+	hotelId: payload.body.body.bookHotelResponse.hotelId default "",
+	noOfRooms: payload.body.body.bookHotelResponse.noOfRooms as Number default 0,
+	hotelName: "TAJ",
+	customerContactNo: payload.body.body.bookHotelResponse.customerContactNo default "",
+	bookingId: payload.body.body.bookHotelResponse.bookingId,
+	customerName: payload.body.body.bookHotelResponse.customerName default ""
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c47837a9-d8b0-41e3-8a4f-9c26dfd4a8d9" type="APP:INVALID_HOTEL_ID">
+				<ee:transform doc:name="Transform Message" doc:id="98aac9dc-2361-4a59-8661-5d7cdcafda40" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: error.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="400" doc:name="httpStatus" doc:id="2d6b9a8c-62c0-4ff5-a3c4-d1a69eca7d84" variableName="httpStatus"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+	<flow name="putHotelBookingFlow" doc:id="eb576629-e1e4-45b4-a9a2-5baae14a5c6f" >
+		<set-variable value="#[message.attributes.queryParams.hotelGroup]" doc:name="hotelGroup" doc:id="17978326-e3a8-4bd5-88af-84c7b3a8c602" variableName="hotelGroup"/>
+		<choice doc:name="Choice" doc:id="6d613eec-7e93-4e25-8ac1-b16a1ef4dad4" >
+			<when expression='#[upper(vars.hotelGroup) == "TAJ"]'>
+				<flow-ref doc:name="putTajHotelBookingFlow" doc:id="8a4b7ec2-1daf-404b-905d-9cf9b1f0afb5" name="putTajHotelBookingFlow" />
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="c567c70c-59ff-4a44-8b4e-aced459e84a3" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: "Invalid hotelGroup: " ++ vars.hotelGroup ++ 
+	', valid values are TAJ.'
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="Transform Message" doc:id="ed5ca924-6427-4150-8d6c-0451756dcbf3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="putTajHotelBookingFlow" doc:id="72f2df46-9323-4ff4-a3dc-b566b6c73907" >
+		<set-variable value="#[payload]" doc:name="updateRequest" doc:id="21c23023-10e1-4c17-89b8-c798ae7afe73" variableName="updateRequest"/>
+		<flow-ref doc:name="getTajHotelBookingByIdFlow" doc:id="d0081b6b-acb0-42f6-a90e-fd4f8ef8ccc2" name="getTajHotelBookingByIdFlow"/>
+		<ee:transform doc:name="Transform Message" doc:id="21a604ac-492e-4610-bd8f-8a12e3d16e2b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://www.tajgroup.org/TajGroupHotelBookings/
+---
+{
+	ns0#updateBookingDetailsById: {
+		in: {
+			bookingId: vars.bookingId default "",
+			hotelId: vars.updateRequest.hotelId,
+			roomCategory: vars.updateRequest.roomCategory,
+			customerName: vars.updateRequest.customerName,
+			customerContactNo: vars.updateRequest.customerContactNo,
+			noOfRooms: vars.updateRequest.noOfRooms as String,
+			duration: vars.updateRequest.duration as String,
+			totalAmount: payload.totalAmount default "",
+			bookingdate: now() as String{format: "yyyyMMdd"}
+		}
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume doc:name="updateBookingById" doc:id="b2dcfad5-91bb-46a3-9b44-5a2d11ff710d" config-ref="Web_Service_Consumer_Config" operation="updateBookingDetailsById"/>
+		<ee:transform doc:name="Transform Message" doc:id="b14a83bb-36f3-4e28-b81a-8faa5753e34b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	duration: payload.body.body.updateBookingDetailsById.in.duration as Number default 0,
+	totalAmount: payload.body.body.updateBookingDetailsById.in.totalAmount,
+	roomCategory: payload.body.body.updateBookingDetailsById.in.roomCategory default "",
+	hotelId: payload.body.body.updateBookingDetailsById.in.hotelId default "",
+	noOfRooms: payload.body.body.updateBookingDetailsById.in.noOfRooms as Number default 0,
+	hotelName: "TAJ",
+	customerContactNo: payload.body.body.updateBookingDetailsById.in.customerContactNo default "",
+	bookingId: payload.body.body.updateBookingDetailsById.in.bookingId,
+	customerName: payload.body.body.updateBookingDetailsById.in.customerName default ""
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="validateHotelBookingIdFlow" doc:id="a107f378-f371-4119-95bc-d3819654e871" >
+		<set-variable value="#[message.attributes.uriParams.bookingId]" doc:name="bookingId" doc:id="28e71b52-e7ae-4767-a0b4-bf262371d645" variableName="bookingId"/>
+		<validation:is-number numberType="INTEGER" doc:name="Is number" doc:id="10f75284-f91f-4d6a-bf12-c1331734b866" value="#[vars.bookingId]" message='#["Invalid bookingId: " ++ vars.bookingId ++ ", should be an integer value"]'>
+			<error-mapping sourceType="VALIDATION:INVALID_NUMBER" targetType="APP:INVALID_BOOKING_ID" />
+		</validation:is-number>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c3c74816-d910-4315-8a84-361671119163" type="APP:INVALID_BOOKING_ID">
+				<ee:transform doc:name="Transform Message" doc:id="3704e44c-013c-4da1-b98d-893d58b798b6" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	message: error.description
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="400" doc:name="httpStatus" doc:id="a318fd7e-394e-4bed-92e4-2f9aaf33e3f6" variableName="httpStatus"/>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>

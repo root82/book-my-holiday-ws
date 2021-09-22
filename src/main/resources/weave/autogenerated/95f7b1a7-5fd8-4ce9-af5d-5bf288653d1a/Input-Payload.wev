@@ -1,0 +1,12 @@
+%dw 2.0
+
+type auto_95f7b1a7_5fd8_4ce9_af5d_5bf288653d1a_Input_Payload = Array<{  hotelGroup: String,   contactEmail: String,   rating: Number,   addressState: String,   hotelId: String,   hotelName: String,   addressPinCode: Number,   room: Array<{    price: String,     category: String,     _?: Any  }>, 
+  totalRooms: Number, 
+  checkIn: String, 
+  availableRooms: Number, 
+  contactPhoneNo: String, 
+  checkOut: String, 
+  addressCity: String, 
+  _?: Any
+}>
+

@@ -10,7 +10,7 @@ cars:
 indigo-flights:
   host: "indigo-flights-ws.us-e2.cloudhub.io"
   port: "80"
-  basepath: "/"
+  basepath: "/api/"
   protocol: "HTTP"
 
 taj-hotels:

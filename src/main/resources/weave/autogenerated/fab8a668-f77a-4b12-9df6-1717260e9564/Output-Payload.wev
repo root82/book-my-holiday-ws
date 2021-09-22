@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_fab8a668_f77a_4b12_9df6_1717260e9564_Output_Payload = Array<{  departureTime: String,   availableSeats: Number,   price: Number,   destination: String,   flightId: String,   currency: String,   source: String,   airline: String,   planeType: String,   totalSeats: Number,   _?: Any}>
+

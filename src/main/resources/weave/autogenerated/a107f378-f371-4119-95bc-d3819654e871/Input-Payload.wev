@@ -1,0 +1,15 @@
+%dw 2.0
+
+type auto_a107f378_f371_4119_95bc_d3819654e871_Input_Payload = {
+  duration: Number, 
+  totalAmount?: String, 
+  roomCategory: String, 
+  hotelId: String, 
+  noOfRooms: Number, 
+  hotelName: String, 
+  customerContactNo: String, 
+  bookingId?: String, 
+  customerName: String, 
+  _?: Any
+}
+

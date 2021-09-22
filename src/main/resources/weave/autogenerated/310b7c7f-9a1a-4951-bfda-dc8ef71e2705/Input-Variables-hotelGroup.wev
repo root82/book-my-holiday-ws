@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_310b7c7f_9a1a_4951_bfda_dc8ef71e2705_Input_Variables_hotelGroup = String | Null
+
